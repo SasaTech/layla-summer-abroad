@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Journey · Storybook Summer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .journey-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 16px 24px;
+      background: var(--white);
+      border-bottom: 1.5px solid var(--cream-dark);
+      position: sticky;
+      top: var(--nav-height);
+      z-index: 100;
+    }
+
+    .stops-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .stop-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      border: 1.5px solid rgba(61,44,30,0.06);
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+    }
+    .stop-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lift); }
+
+    .stop-cover {
+      height: 160px;
+      background: linear-gradient(135deg, var(--lavender-light), var(--pink-light));
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stop-cover-icon {
+      font-size: 3.5rem;
+      opacity: 0.5;
+    }
+
+    .stop-cover img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.7;
+    }
+
+    .stop-cover-badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+    }
+
+    .stop-body { padding: 16px 18px; flex: 1; }
+    .stop-title { font-family: var(--font-display); font-size: 1.2rem; color: var(--ink); margin-bottom: 2px; }
+    .stop-country { font-size: 0.82rem; color: var(--ink-lighter); margin-bottom: 10px; }
+    .stop-quote { font-style: italic; font-size: 0.88rem; color: var(--ink-light); line-height: 1.5; margin-bottom: 12px; }
+
+    .stop-stats {
+      display: flex;
+      gap: 14px;
+      font-size: 0.78rem;
+      color: var(--ink-lighter);
+      margin-bottom: 14px;
+    }
+
+    .stop-stats span { display: flex; align-items: center; gap: 3px; }
+
+    .stop-footer {
+      padding: 12px 18px;
+      border-top: 1px solid var(--cream-dark);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="main-nav"></nav>
+  <div class="nav-mobile" id="mobile-nav"></div>
+
+  <main class="page">
+    <div class="page-header">
+      <h1>🗺️ The Journey</h1>
+      <p>Every city, every stop, every chapter of the story.</p>
+    </div>
+
+    <div class="journey-controls">
+      <button class="filter-chip active" data-status="all">All Stops</button>
+      <button class="filter-chip" data-status="completed">✓ Visited</button>
+      <button class="filter-chip" data-status="current">📍 Here Now</button>
+      <button class="filter-chip" data-status="upcoming">→ Coming Up</button>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <a href="admin.html" class="btn btn-gold btn-sm">＋ Add Stop</a>
+      </div>
+    </div>
+
+    <div class="stops-grid" id="stops-grid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <span class="empty-icon">🗺️</span>
+        <h3>No stops yet</h3>
+        <p>Add your first destination to start mapping out the adventure.</p>
+        <a href="admin.html" class="btn btn-primary">＋ Add First Stop</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    let allStops = [], allDiary = [], allBucket = [], allGallery = [];
+    let currentFilter = 'all';
+
+    async function initJourney() {
+      [allStops, allDiary, allBucket, allGallery] = await Promise.all([
+        Data.getStops(),
+        Data.getDiary(),
+        Data.getBucket(),
+        Data.getGallery(),
+      ]);
+      renderStops();
+    }
+
+    function renderStops() {
+      const grid = document.getElementById('stops-grid');
+      let stops  = allStops;
+      if (currentFilter !== 'all') stops = stops.filter(s => s.status === currentFilter);
+
+      if (!stops.length) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <span class="empty-icon">🗺️</span>
+            <h3>${currentFilter === 'all' ? 'No stops yet' : 'No stops here'}</h3>
+            <p>${currentFilter === 'all' ? 'Add your first destination to start mapping the adventure.' : 'Nothing here yet — keep travelling!'}</p>
+            ${currentFilter === 'all' ? '<a href="admin.html" class="btn btn-primary">＋ Add First Stop</a>' : ''}
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = stops.map((stop, i) => {
+        const entries  = allDiary.filter(e => e.stopId === stop.id);
+        const photos   = allGallery.filter(g => g.stopId === stop.id);
+        const quests   = allBucket.filter(b => b.stopId === stop.id);
+        const days     = Data.daysBetween(stop.arrivalDate, stop.departureDate);
+
+        const statusCls = `status-${stop.status}`;
+        const statusLbl = STATUS_LABELS[stop.status] || stop.status;
+
+        const coverStyle = stop.coverImage
+          ? `background-image:url('${stop.coverImage}');background-size:cover;background-position:center`
+          : '';
+
+        return `
+          <div class="stop-card animate-fade-up" style="animation-delay:${i*0.07}s">
+            <div class="stop-cover" style="${coverStyle}">
+              ${!stop.coverImage ? `<span class="stop-cover-icon">${stop.icon || '📍'}</span>` : ''}
+              <div class="stop-cover-badge">
+                <span class="sticker ${statusCls}">${statusLbl}</span>
+              </div>
+            </div>
+            <div class="stop-body">
+              <div style="font-size:1.6rem;margin-bottom:4px">${stop.icon || '📍'}</div>
+              <div class="stop-title">${stop.city}</div>
+              <div class="stop-country">${stop.country}${stop.arrivalDate ? ' · ' + Data.formatDateShort(stop.arrivalDate) : ''}</div>
+              ${stop.quote ? `<div class="stop-quote">"${stop.quote}"</div>` : ''}
+              <div class="stop-stats">
+                ${days ? `<span>📅 ${days}d</span>` : ''}
+                ${entries.length ? `<span>📖 ${entries.length}</span>` : ''}
+                ${photos.length  ? `<span>📷 ${photos.length}</span>` : ''}
+                ${quests.length  ? `<span>✨ ${quests.length}</span>` : ''}
+              </div>
+            </div>
+            <div class="stop-footer">
+              <a href="place.html?id=${stop.id}" class="btn btn-primary btn-sm">View Place →</a>
+              <a href="diary.html?stopId=${stop.id}" class="btn btn-outline btn-sm">+ Entry</a>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // Filter chips
+    document.querySelectorAll('.filter-chip[data-status]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-chip[data-status]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentFilter = btn.dataset.status;
+        renderStops();
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', initJourney);
+  </script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bucket List · Storybook Summer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .bucket-layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .bucket-layout { grid-template-columns: 1fr; }
+    }
+
+    .bucket-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .bucket-sidebar-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-card);
+      border: 1.5px solid rgba(61,44,30,0.06);
+    }
+
+    .bucket-filters-title {
+      font-family: var(--font-hand);
+      font-size: 1rem;
+      color: var(--ink-light);
+      margin-bottom: 10px;
+    }
+
+    .bucket-filter-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--ink-light);
+      transition: var(--transition);
+      text-align: left;
+    }
+    .bucket-filter-btn:hover { background: var(--cream-dark); color: var(--ink); }
+    .bucket-filter-btn.active { background: var(--ink); color: var(--cream); }
+
+    .bucket-main-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="main-nav"></nav>
+  <div class="nav-mobile" id="mobile-nav"></div>
+
+  <main class="page">
+    <div class="page-header">
+      <h1>✨ Bucket List</h1>
+      <p>Your summer quest board. Tick them off one by one.</p>
+    </div>
+
+    <div class="bucket-layout">
+
+      <!-- Sidebar -->
+      <div class="bucket-sidebar">
+
+        <!-- Progress -->
+        <div class="bucket-sidebar-card">
+          <div id="bucket-progress">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Category progress -->
+        <div class="bucket-sidebar-card">
+          <div class="bucket-filters-title">By Category</div>
+          <div id="bucket-categories">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="bucket-sidebar-card">
+          <div class="bucket-filters-title">Filter</div>
+          <button class="bucket-filter-btn active" data-cat="all">🌍 All Quests</button>
+          <button class="bucket-filter-btn" data-cat="Places to Visit">🗺️ Places to Visit</button>
+          <button class="bucket-filter-btn" data-cat="Food">🍽️ Food</button>
+          <button class="bucket-filter-btn" data-cat="Experiences">✨ Experiences</button>
+          <button class="bucket-filter-btn" data-cat="Museums & Landmarks">🏛️ Museums</button>
+          <button class="bucket-filter-btn" data-cat="Soft Goals">💛 Soft Goals</button>
+          <button class="bucket-filter-btn" data-cat="Random Fun">🎲 Random Fun</button>
+        </div>
+
+        <button class="btn btn-primary w-full" onclick="openModal('add-bucket-modal')">＋ Add Quest</button>
+      </div>
+
+      <!-- Main list -->
+      <div>
+        <div class="bucket-main-header">
+          <h2 style="font-family:var(--font-hand);font-size:1.6rem;color:var(--ink)">Quests</h2>
+        </div>
+        <div id="bucket-list">
+          <!-- rendered by JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Bucket Modal -->
+  <div class="modal-overlay" id="add-bucket-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>✨ Add a Quest</h2>
+        <button class="modal-close" onclick="closeModal('add-bucket-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="add-bucket-form">
+          <div class="form-group">
+            <label class="form-label">What do you want to do?</label>
+            <input name="title" class="form-input" placeholder="Eat a stroopwafel from a street cart" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Category</label>
+              <select name="category" class="form-select" required>
+                <option value="">— Pick one —</option>
+                <option>Places to Visit</option>
+                <option>Food</option>
+                <option>Experiences</option>
+                <option>Museums & Landmarks</option>
+                <option>Soft Goals</option>
+                <option>Random Fun</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Related City (optional)</label>
+              <select name="stopId" id="bucket-stop" class="form-select">
+                <option value="">— Any place —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes (optional)</label>
+            <input name="notes" class="form-input" placeholder="Extra details, why it matters...">
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+            <button type="button" class="btn btn-outline" onclick="closeModal('add-bucket-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">✨ Add to List</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/bucket.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => BucketPage.init());
+  </script>
+</body>
+</html>

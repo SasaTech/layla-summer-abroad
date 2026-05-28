@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages · Storybook Summer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .messages-hero {
+      background: linear-gradient(135deg, var(--pink-light), var(--lavender-light));
+      text-align: center;
+      padding: 48px 24px 36px;
+      border-bottom: 1.5px solid var(--cream-dark);
+    }
+    .messages-hero h1 { margin-bottom: 8px; }
+    .messages-hero p  { color: var(--ink-light); font-style: italic; max-width: 440px; margin: 0 auto; }
+
+    #messages-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      padding: 32px 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* Envelope cards */
+    .envelope-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1.5px solid rgba(61,44,30,0.06);
+    }
+    .envelope-card:hover { transform: translateY(-4px) rotate(0.5deg); box-shadow: var(--shadow-lift); }
+
+    .envelope-flap {
+      background: linear-gradient(135deg, var(--pink-light), var(--lavender-light));
+      padding: 24px;
+      text-align: center;
+    }
+    .envelope-icon { font-size: 2.4rem; display: block; margin-bottom: 4px; }
+    .envelope-body { padding: 16px 20px; }
+    .envelope-sender { font-family: var(--font-hand); font-size: 1.3rem; color: var(--ink); }
+    .envelope-sub    { font-size: 0.8rem; color: var(--ink-lighter); margin-top: 4px; }
+
+    /* Message modal media */
+    .msg-media-item {
+      margin-top: 16px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+    .msg-media-item img,
+    .msg-media-item video {
+      width: 100%;
+      display: block;
+      max-height: 480px;
+      object-fit: contain;
+      background: #000;
+    }
+    .msg-media-item img { background: var(--cream-dark); object-fit: cover; }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="main-nav"></nav>
+  <div class="nav-mobile" id="mobile-nav"></div>
+
+  <main class="page">
+    <div class="messages-hero">
+      <div style="font-size:2.5rem;margin-bottom:12px">💌</div>
+      <h1>Messages</h1>
+      <p>From the people who love you most.</p>
+    </div>
+
+    <div id="messages-grid">
+      <!-- rendered by JS -->
+    </div>
+  </main>
+
+  <!-- Message modal -->
+  <div class="modal-overlay" id="message-modal">
+    <div class="modal" style="max-width:600px">
+      <div class="modal-header">
+        <h2 id="modal-title">—</h2>
+        <button class="modal-close" onclick="closeModal('message-modal')">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    async function initMessages() {
+      const messages = await Data.getMessages();
+      const grid = document.getElementById('messages-grid');
+
+      if (!messages.length) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1">
+            <span class="empty-icon">💌</span>
+            <h3>No messages yet</h3>
+            <p>Messages from the people who love you will appear here.</p>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = messages.map((msg, i) => `
+        <div class="envelope-card animate-fade-up"
+          style="animation-delay:${i * 0.07}s"
+          onclick="openMessage('${msg.id}')"
+          tabindex="0" role="button"
+          onkeydown="if(event.key==='Enter')openMessage('${msg.id}')">
+          <div class="envelope-flap">
+            <span class="envelope-icon">💌</span>
+          </div>
+          <div class="envelope-body">
+            <div class="envelope-sender">${msg.sender}</div>
+            ${msg.category ? `<div class="envelope-sub">${msg.category}</div>` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      window._messages = messages;
+    }
+
+    function openMessage(id) {
+      const msg = (window._messages || []).find(m => m.id === id);
+      if (!msg) return;
+
+      document.getElementById('modal-title').textContent = `💌 From ${msg.sender}`;
+
+      const mediaHTML = (msg.media || []).map(src => {
+        if (!src) return '';
+        const isVid = /\.(mp4|mov|webm|ogg)(\?|$)/i.test(src);
+        return `<div class="msg-media-item">
+          ${isVid
+            ? `<video src="${src}" controls playsinline></video>`
+            : `<img src="${src}" alt="Message from ${msg.sender}">`
+          }
+        </div>`;
+      }).join('');
+
+      document.getElementById('modal-body').innerHTML = `
+        ${msg.message ? `
+          <div style="
+            background: var(--white);
+            border-radius: var(--radius-md);
+            padding: 20px 24px;
+            font-size: 1.05rem;
+            line-height: 1.9;
+            color: var(--ink);
+            box-shadow: var(--shadow-card);
+            white-space: pre-wrap;
+            border-left: 4px solid var(--pink);
+          ">${msg.message}</div>` : ''}
+        ${mediaHTML}
+        <div style="
+          margin-top: 20px;
+          text-align: right;
+          font-family: var(--font-hand);
+          font-size: 1.3rem;
+          color: var(--ink-light);
+        ">— ${msg.sender} 💛</div>
+      `;
+
+      openModal('message-modal');
+    }
+
+    document.addEventListener('DOMContentLoaded', initMessages);
+  </script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Creator Mode · Storybook Summer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Gate screen */
+    .admin-gate {
+      min-height: calc(100vh - var(--nav-height));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+    }
+
+    .gate-card {
+      background: var(--white);
+      border-radius: var(--radius-xl);
+      padding: 48px 40px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: var(--shadow-lift);
+      text-align: center;
+      border: 1.5px solid rgba(61,44,30,0.06);
+    }
+
+    .gate-card h2 { margin: 16px 0 8px; }
+    .gate-card p  { color: var(--ink-light); margin-bottom: 24px; font-size: 0.95rem; }
+
+    .passcode-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Admin panel */
+    .hidden { display: none !important; }
+
+    .admin-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 0;
+      min-height: calc(100vh - var(--nav-height));
+    }
+
+    @media (max-width: 768px) {
+      .admin-layout { grid-template-columns: 1fr; }
+      .admin-sidenav { display: flex; flex-direction: row; flex-wrap: wrap; gap: 4px; padding: 12px; border-right: none; border-bottom: 1.5px solid var(--cream-dark); }
+    }
+
+    .admin-sidenav {
+      background: var(--cream-dark);
+      border-right: 1.5px solid rgba(61,44,30,0.08);
+      padding: 24px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .admin-nav-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--ink-light);
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      background: none;
+      text-align: left;
+      text-decoration: none;
+    }
+    .admin-nav-link:hover { background: rgba(255,255,255,0.7); color: var(--ink); }
+    .admin-nav-link.active { background: var(--white); color: var(--ink); box-shadow: var(--shadow-card); }
+
+    .admin-sidenav-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-lighter);
+      padding: 8px 14px 4px;
+      margin-top: 8px;
+    }
+
+    .admin-main {
+      padding: 28px;
+      overflow-y: auto;
+    }
+
+    .admin-section { display: none; }
+    .admin-section:first-of-type { display: block; }
+
+    .danger-zone {
+      background: #fff5f5;
+      border: 1.5px solid #ffcdd2;
+      border-radius: var(--radius-md);
+      padding: 20px;
+    }
+
+    .export-card {
+      background: var(--gold-light);
+      border: 1.5px solid var(--gold);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="main-nav"></nav>
+  <div class="nav-mobile" id="mobile-nav"></div>
+
+  <main class="page">
+
+    <!-- Gate screen -->
+    <div id="admin-gate" class="admin-gate">
+      <div class="gate-card">
+        <div style="font-size:3rem">✏️</div>
+        <h2>Creator Mode</h2>
+        <p>This is where you add content to the scrapbook. Enter the passcode to continue.</p>
+        <!-- NOTE: This is NOT real security. The default passcode is "summer".
+             It only exists so the site doesn't feel like an open editor.
+             Anyone with dev tools can bypass this — that's fine. -->
+        <form id="passcode-form">
+          <div class="passcode-row">
+            <input
+              id="passcode-input"
+              type="password"
+              class="form-input"
+              placeholder="passcode..."
+              autocomplete="off"
+              style="flex:1"
+            >
+            <button type="submit" class="btn btn-primary">Enter →</button>
+          </div>
+          <div style="margin-top:12px;font-size:0.78rem;color:var(--ink-lighter)">
+            Hint: it's a season 🌻
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Admin panel -->
+    <div id="admin-panel" class="hidden">
+      <div class="admin-layout">
+
+        <!-- Side nav -->
+        <nav class="admin-sidenav">
+          <div class="admin-sidenav-title">Add Content</div>
+          <a class="admin-nav-link active" data-section="add-stop"    href="#">📍 Add Stop</a>
+          <a class="admin-nav-link"         data-section="add-diary"   href="#">✏️ Add Diary Entry</a>
+          <a class="admin-nav-link"         data-section="add-bucket"  href="#">✨ Add Quest</a>
+          <a class="admin-nav-link"         data-section="add-gallery" href="#">📷 Add Photo/Video</a>
+          <a class="admin-nav-link"         data-section="add-message" href="#">💌 Add Message</a>
+
+          <div class="admin-sidenav-title">Data</div>
+          <a class="admin-nav-link" data-section="export-reset" href="#">💾 Export / Reset</a>
+        </nav>
+
+        <!-- Main content -->
+        <div class="admin-main">
+
+          <!-- Add Stop -->
+          <section class="admin-section" id="add-stop">
+            <div class="admin-section">
+              <h2>📍 Add a Stop</h2>
+              <form id="add-stop-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">City *</label>
+                    <input name="city" class="form-input" placeholder="Amsterdam" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Country *</label>
+                    <input name="country" class="form-input" placeholder="Netherlands" required>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Arrival Date</label>
+                    <input name="arrivalDate" type="date" class="form-input">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Departure Date</label>
+                    <input name="departureDate" type="date" class="form-input">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                      <option value="upcoming">→ Upcoming</option>
+                      <option value="current">📍 Here Now</option>
+                      <option value="completed">✓ Completed</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Icon / Emoji</label>
+                    <input name="icon" class="form-input" placeholder="🏛️" maxlength="4">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Latitude</label>
+                    <input name="mapX" type="number" step="any" class="form-input" placeholder="52.3676 (Amsterdam)">
+                    <div class="form-hint">Decimal latitude — Google "city name lat lng" to find it.</div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Longitude</label>
+                    <input name="mapY" type="number" step="any" class="form-input" placeholder="4.9041">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Short URL ID <span class="form-hint" style="display:inline">(e.g. "amsterdam" → place.html?id=amsterdam)</span></label>
+                  <input name="id" class="form-input" placeholder="amsterdam">
+                  <div class="form-hint">Leave blank to auto-generate. Use lowercase, hyphens only.</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Short Quote</label>
+                  <input name="quote" class="form-input" placeholder="One line that captures this place...">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Cover Image Path</label>
+                  <input name="coverImage" class="form-input" placeholder="assets/photos/amsterdam-cover.jpg">
+                  <div class="form-hint">Put the image in assets/photos/ and type the path here.</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Notes</label>
+                  <textarea name="notes" class="form-textarea" placeholder="Anything you want to remember about this place..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">📍 Add Stop</button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Add Diary Entry -->
+          <section class="admin-section hidden" id="add-diary">
+            <div class="admin-section">
+              <h2>✏️ Add a Diary Entry</h2>
+              <form id="add-entry-form-admin">
+                <div class="form-group">
+                  <label class="form-label">Title *</label>
+                  <input name="title" class="form-input" placeholder="Today felt like..." required>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Date *</label>
+                    <input name="date" type="date" class="form-input" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Place</label>
+                    <select name="stopId" id="entry-stop" class="form-select"></select>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Mood</label>
+                    <select name="mood" class="form-select">
+                      <option value="">—</option>
+                      <option>Joyful</option><option>Homesick</option><option>Reflective</option>
+                      <option>Chaotic</option><option>Peaceful</option><option>Curious</option><option>Overwhelmed</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Entry Type</label>
+                    <select name="entryType" class="form-select">
+                      <option value="">—</option>
+                      <option>Quick Thought</option><option>Full Journal</option><option>Photo Story</option>
+                      <option>Voice/Video Reflection</option><option>Memory Snapshot</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Entry *</label>
+                  <textarea name="body" class="form-textarea" style="min-height:200px" placeholder="Write anything..." required></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Media paths (one per line)</label>
+                  <textarea name="media" class="form-textarea" style="min-height:70px" placeholder="assets/photos/photo.jpg"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">💾 Save Entry</button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Add Bucket Item -->
+          <section class="admin-section hidden" id="add-bucket">
+            <div class="admin-section">
+              <h2>✨ Add a Quest</h2>
+              <form id="add-bucket-form-admin">
+                <div class="form-group">
+                  <label class="form-label">What do you want to do? *</label>
+                  <input name="title" class="form-input" placeholder="Eat a real croissant in Paris" required>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Category *</label>
+                    <select name="category" class="form-select" required>
+                      <option value="">— Pick one —</option>
+                      <option>Places to Visit</option>
+                      <option>Food</option>
+                      <option>Experiences</option>
+                      <option>Museums & Landmarks</option>
+                      <option>Soft Goals</option>
+                      <option>Random Fun</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Related Place</label>
+                    <select name="stopId" id="bucket-stop-admin" class="form-select"></select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Notes</label>
+                  <input name="notes" class="form-input" placeholder="Extra details...">
+                </div>
+                <button type="submit" class="btn btn-primary">✨ Add Quest</button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Add Gallery -->
+          <section class="admin-section hidden" id="add-gallery">
+            <div class="admin-section">
+              <h2>📷 Add Photo or Video</h2>
+              <form id="add-gallery-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <select name="type" class="form-select">
+                      <option value="image">🖼 Photo</option>
+                      <option value="video">🎬 Video</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input name="date" type="date" class="form-input">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">File path or URL *</label>
+                  <input name="src" class="form-input" placeholder="assets/photos/my-photo.jpg" required>
+                  <div class="form-hint">Tip: Add photos to assets/photos/ folder before deploying, then reference them here.</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Caption</label>
+                  <input name="caption" class="form-input" placeholder="What's happening here?">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Place</label>
+                  <select name="stopId" id="gallery-stop-admin" class="form-select"></select>
+                </div>
+                <button type="submit" class="btn btn-primary">📷 Add to Gallery</button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Add Message -->
+          <section class="admin-section hidden" id="add-message">
+            <div class="admin-section">
+              <h2>💌 Add a Message</h2>
+              <p style="color:var(--ink-light);margin-bottom:20px;font-size:0.9rem">
+                These appear in the Messages page as envelopes. Perfect for adding birthday notes,
+                voice messages, or video letters.
+              </p>
+              <form id="add-message-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">From (sender name) *</label>
+                    <input name="sender" class="form-input" placeholder="Mom" required>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Category</label>
+                    <select name="category" class="form-select">
+                      <option>Open anytime</option>
+                      <option>Open when homesick</option>
+                      <option>Open when celebrating</option>
+                      <option>Open when overwhelmed</option>
+                      <option>Open when lonely</option>
+                      <option>Open on the final day</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Message *</label>
+                  <textarea name="message" class="form-textarea" style="min-height:140px" placeholder="Write your message here..." required></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Unlock date (optional)</label>
+                  <input name="unlockDate" type="date" class="form-input">
+                  <div class="form-hint">Leave empty to allow opening anytime. Set a future date to lock it until then.</div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Media paths (one per line — photos, videos)</label>
+                  <textarea name="media" class="form-textarea" style="min-height:70px"
+                    placeholder="assets/messages/mom-letter.png&#10;assets/messages/mom-video.mp4"></textarea>
+                  <div class="form-hint">Put files in assets/messages/ before deploying. Supports .png .jpg .mp4 .mov .webm</div>
+                </div>
+                <button type="submit" class="btn btn-primary">💌 Save Message</button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Export / Reset -->
+          <section class="admin-section hidden" id="export-reset">
+            <div class="admin-section">
+              <h2>💾 Export & Reset</h2>
+
+              <div class="export-card">
+                <h3 style="font-family:var(--font-hand);font-size:1.3rem;margin-bottom:6px">💾 Export Memories</h3>
+                <p style="font-size:0.9rem;color:var(--ink-light);margin-bottom:14px">
+                  Download everything saved in this browser as a JSON file.
+                  Keep this backup safe — it lets you restore memories if you switch browsers or devices.
+                </p>
+                <button class="btn btn-gold" id="export-btn">⬇ Download Backup</button>
+              </div>
+
+              <div class="export-card" style="background:var(--lavender-light);border-color:var(--lavender)">
+                <h3 style="font-family:var(--font-hand);font-size:1.3rem;margin-bottom:6px">📂 Import Memories</h3>
+                <p style="font-size:0.9rem;color:var(--ink-light);margin-bottom:14px">
+                  Restore a previous backup. This will merge the backup data with anything already saved.
+                </p>
+                <button class="btn btn-outline" id="import-btn">⬆ Upload Backup File</button>
+                <input type="file" id="import-file" accept=".json" style="display:none">
+              </div>
+
+              <div class="danger-zone">
+                <h3 style="font-family:var(--font-hand);font-size:1.3rem;margin-bottom:6px;color:#c62828">🗑️ Reset Local Data</h3>
+                <p style="font-size:0.9rem;color:#666;margin-bottom:14px">
+                  This clears all locally added content from this browser. The original messages.json
+                  data will remain. This cannot be undone — export first if you want to keep anything.
+                </p>
+                <button class="btn btn-outline" id="reset-btn" style="color:#c62828;border-color:#ffcdd2">🗑️ Clear Local Data</button>
+              </div>
+            </div>
+          </section>
+
+        </div><!-- /admin-main -->
+      </div><!-- /admin-layout -->
+    </div><!-- /admin-panel -->
+
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/admin.js"></script>
+  <script>
+    // Set today as default for date fields
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('input[type="date"]').forEach(d => {
+        if (!d.value) d.value = new Date().toISOString().slice(0, 10);
+      });
+
+      // Handle URL hash to jump to section
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        const link = document.querySelector(`.admin-nav-link[data-section="${hash}"]`);
+        if (link) setTimeout(() => link.click(), 400);
+      }
+    });
+  </script>
+</body>
+</html>

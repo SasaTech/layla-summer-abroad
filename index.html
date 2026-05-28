@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layla's Summer Abroad ✈️</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+    .home-hero {
+      background: linear-gradient(135deg, var(--lavender-light) 0%, var(--pink-light) 50%, var(--gold-light) 100%);
+      padding: 48px 24px 32px;
+      text-align: center;
+      border-bottom: 1.5px solid var(--cream-dark);
+    }
+    .home-hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      color: var(--ink);
+      margin-bottom: 10px;
+    }
+    .home-hero p {
+      color: var(--ink-light);
+      font-size: 1.05rem;
+      font-style: italic;
+    }
+    .hero-icons {
+      font-size: 2rem;
+      letter-spacing: 8px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .home-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 24px;
+      padding: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 900px) {
+      .home-layout { grid-template-columns: 1fr; }
+    }
+
+    .map-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lift);
+      background: #dce8f5;
+    }
+
+    #map-container {
+      width: 100%;
+      height: 420px;
+      border-radius: var(--radius-lg);
+    }
+
+    /* Leaflet tweaks — scrapbook feel */
+    .leaflet-control-attribution {
+      font-size: 9px !important;
+      opacity: 0.6;
+      background: rgba(253,248,240,0.8) !important;
+    }
+    .leaflet-control-zoom a {
+      font-family: var(--font-body) !important;
+      color: var(--ink) !important;
+    }
+
+    .sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-card { padding: 14px 12px; }
+    .stat-icon { font-size: 1.4rem; margin-bottom: 4px; }
+    .stat-number { font-size: 1.6rem; }
+    .stat-label { font-size: 0.72rem; }
+
+    .sidebar-panel {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      border: 1.5px solid rgba(61,44,30,0.06);
+    }
+
+    .sidebar-panel-header {
+      padding: 14px 16px;
+      background: var(--cream-dark);
+      font-family: var(--font-hand);
+      font-size: 1.1rem;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .mini-entry {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--cream-dark);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .mini-entry:last-child { border-bottom: none; }
+    .mini-entry:hover { background: var(--cream); }
+    .mini-entry-title { font-weight: 700; font-size: 0.88rem; color: var(--ink); }
+    .mini-entry-meta  { font-size: 0.78rem; color: var(--ink-lighter); margin-top: 2px; }
+
+    .upcoming-stop {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--cream-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .upcoming-stop:last-child { border-bottom: none; }
+    .upcoming-icon { font-size: 1.4rem; }
+    .upcoming-city { font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+    .upcoming-date { font-size: 0.78rem; color: var(--ink-lighter); }
+
+    /* Pin modal popup */
+    .pin-popup {
+      position: absolute;
+      background: var(--white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lift);
+      padding: 16px;
+      min-width: 200px;
+      max-width: 260px;
+      z-index: 50;
+      pointer-events: all;
+      border: 1.5px solid rgba(61,44,30,0.08);
+      animation: fade-up 0.2s ease;
+    }
+    .pin-popup h3 { font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+    .pin-popup p  { font-size: 0.82rem; color: var(--ink-light); font-style: italic; margin-bottom: 10px; line-height: 1.5; }
+    .pin-popup-close {
+      position: absolute;
+      top: 8px; right: 8px;
+      background: var(--cream-dark);
+      border: none;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 20px 24px 8px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="main-nav"></nav>
+  <div class="nav-mobile" id="mobile-nav"></div>
+
+  <main class="page">
+    <!-- Hero -->
+    <div class="home-hero">
+      <span class="hero-icons">✈️ 🗺️ 💌 📸 🌸</span>
+      <h1>Layla's Summer Abroad</h1>
+      <p id="hero-subtitle">Your summer story, one memory at a time.</p>
+    </div>
+
+    <!-- Quick actions -->
+    <div class="quick-actions">
+      <a href="admin.html#add-stop"  class="btn btn-outline">📍 Add Stop</a>
+      <a href="diary.html"           class="btn btn-outline">✏️ Write in Diary</a>
+      <a href="bucket-list.html"     class="btn btn-outline">✨ Bucket List</a>
+      <a href="gallery.html"         class="btn btn-outline">📷 Gallery</a>
+    </div>
+
+    <!-- Main layout -->
+    <div class="home-layout">
+
+      <!-- Map -->
+      <div>
+        <div class="map-wrapper" id="map-wrapper">
+          <div id="map-container"></div>
+          <div id="pin-popup" class="pin-popup" style="display:none"></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+          <span style="font-size:0.78rem;color:var(--ink-lighter)">✦ Click any pin to preview · <a href="journey.html" style="color:var(--lavender-dark);font-weight:700">View full journey →</a></span>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <!-- Stats -->
+        <div>
+          <div style="font-family:var(--font-hand);font-size:1.1rem;color:var(--ink);margin-bottom:10px">📊 Adventure Stats</div>
+          <div class="stats-grid" id="stats-grid">
+            <!-- rendered by JS -->
+          </div>
+        </div>
+
+        <!-- Recent diary -->
+        <div class="sidebar-panel">
+          <div class="sidebar-panel-header">
+            📖 Recent Memories
+            <a href="diary.html" style="font-size:0.8rem;color:var(--ink-light)">see all →</a>
+          </div>
+          <div id="recent-diary">
+            <div class="empty-state" style="padding:24px">
+              <span style="font-size:2rem">📖</span>
+              <p style="font-size:0.85rem;margin-top:8px">No diary entries yet.<br><a href="diary.html" style="color:var(--pink-dark)">Write your first one →</a></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upcoming stops -->
+        <div class="sidebar-panel">
+          <div class="sidebar-panel-header">
+            🗺️ Upcoming Stops
+            <a href="journey.html" style="font-size:0.8rem;color:var(--ink-light)">see all →</a>
+          </div>
+          <div id="upcoming-stops">
+            <div style="padding:16px;font-size:0.85rem;color:var(--ink-lighter)">No upcoming stops yet.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV/XN/WPeM=" crossorigin=""></script>
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/map.js"></script>
+  <script>
+    async function initHome() {
+      const [stops, diary, bucket, gallery] = await Promise.all([
+        Data.getStops(),
+        Data.getDiary(),
+        Data.getBucket(),
+        Data.getGallery(),
+      ]);
+
+      // Update hero subtitle
+      const current = stops.find(s => s.status === 'current');
+      if (current) {
+        document.getElementById('hero-subtitle').textContent =
+          `Currently in ${current.city}, ${current.country} ${current.icon || '📍'}`;
+      } else if (stops.length === 0) {
+        document.getElementById('hero-subtitle').textContent =
+          'Add your first stop to begin the adventure ✈️';
+      }
+
+      // Stats
+      const countries = [...new Set(stops.filter(s => s.status !== 'upcoming').map(s => s.country))];
+      const visited   = stops.filter(s => s.status === 'completed' || s.status === 'current');
+      const completed = Storage.getCompletedIds();
+      const firstArrival = stops.map(s => s.arrivalDate).filter(Boolean).sort()[0];
+      const daysAbroad = firstArrival ? Data.daysFromToday(firstArrival) : 0;
+
+      const statsGrid = document.getElementById('stats-grid');
+      const stats = [
+        { icon:'🌍', num: countries.length,  label:'Countries' },
+        { icon:'📍', num: visited.length,     label:'Cities Visited' },
+        { icon:'📖', num: diary.length,       label:'Diary Entries' },
+        { icon:'📷', num: gallery.length,     label:'Photos & Videos' },
+        { icon:'✨', num: completed.length,   label:'Quests Done' },
+        { icon:'🌤️', num: daysAbroad,         label:'Days Abroad' },
+      ];
+      statsGrid.innerHTML = stats.map(s => `
+        <div class="stat-card">
+          <div class="stat-icon">${s.icon}</div>
+          <div class="stat-number">${s.num}</div>
+          <div class="stat-label">${s.label}</div>
+        </div>`).join('');
+
+      // Recent diary
+      const recentDiary = diary.slice(0, 4);
+      const diaryEl = document.getElementById('recent-diary');
+      if (recentDiary.length) {
+        diaryEl.innerHTML = recentDiary.map(e => {
+          const stop = stops.find(s => s.id === e.stopId);
+          return `<div class="mini-entry" onclick="location.href='diary.html'">
+            <div class="mini-entry-title">${e.title || 'Untitled Entry'}</div>
+            <div class="mini-entry-meta">${Data.formatDateShort(e.date)}${stop ? ' · ' + stop.city : ''}</div>
+          </div>`;
+        }).join('');
+      }
+
+      // Upcoming stops
+      const upcoming = stops.filter(s => s.status === 'upcoming').slice(0, 4);
+      const upcomingEl = document.getElementById('upcoming-stops');
+      if (upcoming.length) {
+        upcomingEl.innerHTML = upcoming.map(s => `
+          <div class="upcoming-stop">
+            <span class="upcoming-icon">${s.icon || '📍'}</span>
+            <div>
+              <div class="upcoming-city">${s.city}</div>
+              <div class="upcoming-date">${s.country} · ${Data.formatDateShort(s.arrivalDate)}</div>
+            </div>
+          </div>`).join('');
+      }
+
+      // Map — delay slightly so grid layout is fully painted
+      setTimeout(async () => {
+        await MapRenderer.init('map-container', showPinPopup);
+        // Force Leaflet to recalculate size in case container shifted
+        setTimeout(() => MapRenderer.map && MapRenderer.map.invalidateSize(), 100);
+      }, 50);
+    }
+
+    function showPinPopup(stop) {
+      const popup  = document.getElementById('pin-popup');
+      const wrapper = document.getElementById('map-wrapper');
+      if (!popup || !wrapper) return;
+
+      const statusLabel = STATUS_LABELS[stop.status] || stop.status;
+      popup.innerHTML = `
+        <button class="pin-popup-close" onclick="document.getElementById('pin-popup').style.display='none'">✕</button>
+        <div style="margin-bottom:6px">
+          <span class="sticker ${stop.status === 'completed' ? 'sticker-gold' : stop.status === 'current' ? 'sticker-pink' : 'sticker-lavender'}">${statusLabel}</span>
+        </div>
+        <h3>${stop.icon || '📍'} ${stop.city}</h3>
+        <p>${stop.quote || stop.notes || 'A stop on the journey.'}</p>
+        <div style="font-size:0.78rem;color:var(--ink-lighter);margin-bottom:10px">
+          ${stop.country} · ${Data.formatDateShort(stop.arrivalDate)}
+        </div>
+        <a href="place.html?id=${stop.id}" class="btn btn-primary btn-sm" style="width:100%;justify-content:center">View Place →</a>
+      `;
+
+      // Position near the pin (roughly)
+      const wW = wrapper.clientWidth;
+      const wH = wrapper.clientHeight;
+      const px  = (stop.mapX / 100) * wW;
+      const py  = (stop.mapY / 100) * wH;
+      const left = Math.min(px + 16, wW - 280);
+      const top  = Math.max(py - 80, 8);
+
+      popup.style.left    = left + 'px';
+      popup.style.top     = top  + 'px';
+      popup.style.display = 'block';
+    }
+
+    // Close popup when clicking map background
+    document.getElementById('map-container')?.addEventListener('click', e => {
+      if (!e.target.closest('.map-pin')) {
+        document.getElementById('pin-popup').style.display = 'none';
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', initHome);
+  </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Place · Storybook Summer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .place-stats-bar {
+      display: flex;
+      gap: 20px;
+      padding: 20px 24px;
+      background: var(--white);
+      border-bottom: 1.5px solid var(--cream-dark);
+      flex-wrap: wrap;
+    }
+
+    .place-stat { text-align: center; }
+    .place-stat-num { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; color: var(--ink); }
+    .place-stat-lbl { font-size: 0.75rem; color: var(--ink-lighter); font-weight: 700; text-transform: uppercase; }
+
+    .place-sections {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .section-title {
+      font-family: var(--font-hand);
+      font-size: 1.6rem;
+      color: var(--ink);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .diary-mini-card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      border: 1.5px solid rgba(61,44,30,0.06);
+      box-shadow: var(--shadow-card);
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      transition: var(--transition);
+    }
+    .diary-mini-card:hover { transform: translateX(4px); }
+    .diary-mini-card h4 { font-family: var(--font-display); font-size: 1rem; color: var(--ink); margin-bottom: 4px; }
+    .diary-mini-card p  { font-size: 0.88rem; color: var(--ink-light); line-height: 1.6; }
+
+    .gallery-mini-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+    }
+
+    .gallery-mini-thumb {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      background: var(--cream-dark);
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: var(--shadow-card);
+    }
+    .gallery-mini-thumb:hover { transform: scale(1.04); box-shadow: var(--shadow-lift); }
+    .gallery-mini-thumb img,
+    .gallery-mini-thumb video { width: 100%; height: 100%; object-fit: cover; }
+
+    .action-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 16px 24px;
+      border-top: 1.5px solid var(--cream-dark);
+      background: var(--cream);
+    }
+
+    .notes-box {
+      background: var(--gold-light);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      border: 1.5px solid var(--gold);
+      font-style: italic;
+      color: var(--ink-light);
+      line-height: 1.7;
+    }
+
+    .not-found {
+      text-align: center;
+      padding: 80px 24px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="main-nav"></nav>
+  <div class="nav-mobile" id="mobile-nav"></div>
+
+  <main class="page" id="place-page">
+    <div class="not-found" id="not-found" style="display:none">
+      <span style="font-size:3rem">😕</span>
+      <h2 style="margin:16px 0 8px">Stop not found</h2>
+      <p style="color:var(--ink-light);margin-bottom:20px">That place doesn't exist yet, or the link is broken.</p>
+      <a href="journey.html" class="btn btn-primary">← Back to Journey</a>
+    </div>
+    <div id="place-content"></div>
+  </main>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox-overlay">
+    <div class="lightbox-content"></div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    async function initPlace() {
+      const params = new URLSearchParams(window.location.search);
+      const id     = params.get('id');
+
+      if (!id) { showNotFound(); return; }
+
+      const [stop, stops, diary, bucket, gallery] = await Promise.all([
+        Data.getStop(id),
+        Data.getStops(),
+        Data.getDiary(),
+        Data.getBucket(),
+        Data.getGallery(),
+      ]);
+
+      if (!stop) { showNotFound(); return; }
+
+      const entries  = diary.filter(e => e.stopId === stop.id);
+      const photos   = gallery.filter(g => g.stopId === stop.id);
+      const quests   = bucket.filter(b => b.stopId === stop.id);
+      const days     = Data.daysBetween(stop.arrivalDate, stop.departureDate);
+      const completedIds = Storage.getCompletedIds();
+      const doneQuests   = quests.filter(q => completedIds.includes(q.id) || q.completed);
+
+      const statusCls = `status-${stop.status}`;
+      const statusLbl = STATUS_LABELS[stop.status] || stop.status;
+
+      document.title = `${stop.city} · Storybook Summer`;
+
+      const content = document.getElementById('place-content');
+      content.innerHTML = `
+        <!-- Hero -->
+        <div class="place-hero">
+          ${stop.coverImage ? `<img class="place-hero-img" src="${stop.coverImage}" alt="${stop.city}" onerror="this.remove()">` : ''}
+          <div class="place-hero-content">
+            <div style="margin-bottom:8px">
+              <span class="sticker ${statusCls}">${statusLbl}</span>
+              <span class="sticker sticker-cream" style="margin-left:6px">${stop.country}</span>
+            </div>
+            <h1>${stop.icon || '📍'} ${stop.city}</h1>
+            ${stop.quote ? `<p>"${stop.quote}"</p>` : ''}
+            <div style="font-size:0.85rem;color:rgba(255,255,255,0.7);margin-top:8px">
+              ${stop.arrivalDate ? Data.formatDateShort(stop.arrivalDate) : ''}
+              ${stop.departureDate ? ' → ' + Data.formatDateShort(stop.departureDate) : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="place-stats-bar">
+          ${days ? `<div class="place-stat"><div class="place-stat-num">${days}</div><div class="place-stat-lbl">Days</div></div>` : ''}
+          <div class="place-stat"><div class="place-stat-num">${entries.length}</div><div class="place-stat-lbl">Diary Entries</div></div>
+          <div class="place-stat"><div class="place-stat-num">${photos.length}</div><div class="place-stat-lbl">Photos</div></div>
+          <div class="place-stat"><div class="place-stat-num">${doneQuests.length}/${quests.length}</div><div class="place-stat-lbl">Quests Done</div></div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-bar">
+          <a href="diary.html?stopId=${stop.id}" class="btn btn-outline btn-sm">✏️ Add Diary Entry</a>
+          <a href="admin.html#add-gallery"       class="btn btn-outline btn-sm">📷 Add Photo</a>
+          <a href="admin.html#add-bucket"        class="btn btn-outline btn-sm">✨ Add Quest</a>
+          <a href="journey.html"                 class="btn btn-ghost btn-sm">← All Stops</a>
+        </div>
+
+        <!-- Sections -->
+        <div class="place-sections">
+
+          ${stop.notes ? `
+          <section>
+            <div class="section-title">📝 Notes</div>
+            <div class="notes-box">${stop.notes}</div>
+          </section>` : ''}
+
+          <!-- Diary entries -->
+          <section>
+            <div class="section-title">📖 Diary Entries</div>
+            ${entries.length ? entries.map(e => `
+              <div class="diary-mini-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:8px">
+                  <h4>${e.title || 'Entry'}</h4>
+                  <div style="display:flex;gap:6px">
+                    ${e.mood ? `<span class="mood ${MOOD_CLASS[e.mood]||''}">${MOOD_ICONS[e.mood]||''} ${e.mood}</span>` : ''}
+                    <span class="sticker sticker-cream">${Data.formatDateShort(e.date)}</span>
+                  </div>
+                </div>
+                <p>${(e.body || '').slice(0, 200)}${(e.body||'').length > 200 ? '…' : ''}</p>
+              </div>`).join('') :
+              `<div style="color:var(--ink-lighter);font-style:italic;padding:8px 0">No diary entries for this place yet. <a href="diary.html?stopId=${stop.id}" style="color:var(--pink-dark)">Write one →</a></div>`
+            }
+          </section>
+
+          <!-- Gallery -->
+          <section>
+            <div class="section-title">📷 Photos & Videos</div>
+            ${photos.length ? `
+              <div class="gallery-mini-grid">
+                ${photos.map((m, i) => {
+                  const vid = isVideo(m.src);
+                  return `<div class="gallery-mini-thumb" onclick="openLightbox('${m.id}',${JSON.stringify(photos).replace(/'/g,"&#39;")})">
+                    ${vid
+                      ? `<video src="${m.src}" muted preload="metadata"></video>`
+                      : `<img src="${m.src}" alt="${m.caption||''}" loading="lazy" onerror="this.src='${placeholderSVG(200,200,'📷')}'">` }
+                  </div>`;
+                }).join('')}
+              </div>` :
+              `<div style="color:var(--ink-lighter);font-style:italic">No photos yet. <a href="admin.html#add-gallery" style="color:var(--pink-dark)">Add some →</a></div>`
+            }
+          </section>
+
+          <!-- Bucket list -->
+          <section>
+            <div class="section-title">✨ Quests for ${stop.city}</div>
+            ${quests.length ? `
+              <div style="display:flex;flex-direction:column;gap:10px">
+                ${quests.map(q => {
+                  const done = completedIds.includes(q.id) || q.completed;
+                  return `<div class="bucket-item ${done?'completed':''}">
+                    <div class="bucket-checkbox">${done ? '✓' : ''}</div>
+                    <div>
+                      <div class="bucket-title">${q.title}</div>
+                      ${q.notes ? `<div class="bucket-meta">${q.notes}</div>` : ''}
+                    </div>
+                    ${done ? '<span class="bucket-stamp">✅</span>' : ''}
+                  </div>`;
+                }).join('')}
+              </div>` :
+              `<div style="color:var(--ink-lighter);font-style:italic">No quests for this place yet. <a href="admin.html#add-bucket" style="color:var(--pink-dark)">Add one →</a></div>`
+            }
+          </section>
+
+        </div>
+      `;
+    }
+
+    function showNotFound() {
+      document.getElementById('not-found').style.display = 'block';
+      document.getElementById('place-content').style.display = 'none';
+    }
+
+    // Simple lightbox for place page
+    let placePhotos = [];
+    function openLightbox(id, photos) {
+      placePhotos = photos;
+      const item = photos.find(p => p.id === id);
+      if (!item) return;
+      const lb = document.getElementById('lightbox');
+      const isVid = isVideo(item.src);
+      lb.querySelector('.lightbox-content').innerHTML = `
+        <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+        ${isVid
+          ? `<video src="${item.src}" controls autoplay playsinline style="max-width:90vw;max-height:80vh;border-radius:var(--radius-md)"></video>`
+          : `<img src="${item.src}" alt="${item.caption||''}" style="max-width:90vw;max-height:80vh;border-radius:var(--radius-md);object-fit:contain">`
+        }
+        ${item.caption ? `<div class="lightbox-caption">${item.caption}</div>` : ''}
+      `;
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      const lb = document.getElementById('lightbox');
+      lb.classList.remove('open');
+      document.body.style.overflow = '';
+      lb.querySelectorAll('video').forEach(v => v.pause());
+    }
+
+    document.getElementById('lightbox')?.addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeLightbox();
+    });
+
+    document.addEventListener('DOMContentLoaded', initPlace);
+  </script>
+</body>
+</html>

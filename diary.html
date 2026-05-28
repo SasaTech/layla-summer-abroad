@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diary · Storybook Summer</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .diary-layout {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .diary-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .diary-thumb-img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+    }
+
+    .diary-media-thumb {
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav" id="main-nav"></nav>
+  <div class="nav-mobile" id="mobile-nav"></div>
+
+  <main class="page">
+    <div class="page-header">
+      <h1>📖 The Diary</h1>
+      <p>Thoughts, feelings, memories. All of it matters.</p>
+    </div>
+
+    <!-- Filters bar -->
+    <div class="filters-bar" id="diary-filters">
+      <!-- Rendered by diary.js -->
+    </div>
+
+    <!-- Diary list -->
+    <div class="diary-layout">
+      <div class="diary-top">
+        <div style="font-family:var(--font-hand);font-size:1.2rem;color:var(--ink-light)" id="entry-count">Loading...</div>
+        <button class="btn btn-primary" onclick="openModal('add-entry-modal')">✏️ New Entry</button>
+      </div>
+      <div id="diary-list">
+        <!-- Rendered by diary.js -->
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Entry Modal -->
+  <div class="modal-overlay" id="add-entry-modal">
+    <div class="modal" style="max-width:620px">
+      <div class="modal-header">
+        <h2>✏️ Write a Diary Entry</h2>
+        <button class="modal-close" onclick="closeModal('add-entry-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="add-entry-form">
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input name="title" class="form-input" placeholder="What was today about?" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input name="date" type="date" class="form-input" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Place</label>
+              <select name="stopId" id="entry-stop" class="form-select">
+                <option value="">— No specific place —</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Mood</label>
+              <select name="mood" class="form-select">
+                <option value="">— How do you feel? —</option>
+                <option>Joyful</option>
+                <option>Homesick</option>
+                <option>Reflective</option>
+                <option>Chaotic</option>
+                <option>Peaceful</option>
+                <option>Curious</option>
+                <option>Overwhelmed</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Entry Type</label>
+              <select name="entryType" class="form-select">
+                <option value="">— Type —</option>
+                <option>Quick Thought</option>
+                <option>Full Journal</option>
+                <option>Photo Story</option>
+                <option>Voice/Video Reflection</option>
+                <option>Memory Snapshot</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">What happened?</label>
+            <textarea name="body" class="form-textarea" placeholder="Write freely. No rules here." style="min-height:180px"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Photo / Video paths (one per line)</label>
+            <textarea name="media" class="form-textarea" style="min-height:70px" placeholder="assets/photos/my-photo.jpg&#10;assets/photos/video.mp4"></textarea>
+            <div class="form-hint">Enter file paths or URLs. Add files to the assets/photos/ folder first.</div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+            <button type="button" class="btn btn-outline" onclick="closeModal('add-entry-modal')">Cancel</button>
+            <button type="submit" class="btn btn-primary">💾 Save Entry</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Read Entry Modal -->
+  <div class="modal-overlay" id="read-entry-modal">
+    <div class="modal" style="max-width:660px">
+      <div class="modal-header">
+        <h2>—</h2>
+        <button class="modal-close" onclick="closeModal('read-entry-modal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- filled by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/diary.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await DiaryPage.init();
+      // Update count label
+      const countEl = document.getElementById('entry-count');
+      if (countEl) {
+        const total = DiaryPage.entries.length;
+        countEl.textContent = total
+          ? `${total} entr${total === 1 ? 'y' : 'ies'}`
+          : 'No entries yet';
+      }
+
+      // Set today's date as default
+      const dateInput = document.querySelector('#add-entry-form input[name="date"]');
+      if (dateInput) dateInput.value = new Date().toISOString().slice(0, 10);
+    });
+  </script>
+</body>
+</html>
