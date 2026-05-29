@@ -1,1 +1,103 @@
-[]
+[
+  {
+    "id": "msg-001",
+    "sender": "Suhan",
+    "category": "",
+    "message": "",
+    "unlockDate": "",
+    "media": [
+      "assets/messages/eepy.png",
+      "assets/messages/movies.mp4",
+      "assets/messages/lfg.mp4"
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Parag",
+    "category": "",
+    "message": "",
+    "unlockDate": "",
+    "media": [
+      "assets/messages/IMG_2625.MOV"
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Navin",
+    "category": "",
+    "message": "happy birthday layla!! finally the big 21!! you’ve been such a great friend over the past couple years, even tho you think I don’t wave at you sometimes around campus (NOT tru) and i can’t wait to see what you’re gonna accomplish in the future! buy a drink on me and I hope you have a great day!! - Navin ",
+    "unlockDate": "",
+    "media": [
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Isabel",
+    "category": "",
+    "message": "",
+    "unlockDate": "",
+    "media": [
+      "assets/messages/isabel.png",
+      "assets/messages/IMG_3835.mov"
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Isabel",
+    "category": "",
+    "message": "",
+    "unlockDate": "",
+    "media": [
+      "assets/messages/isabel.png"
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Favor",
+    "category": "",
+    "message": "",
+    "unlockDate": "",
+    "media": [
+      "assets/messages/IMG_0054.mov"
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Sahej",
+    "category": "",
+    "message": "",
+    "unlockDate": "",
+    "media": [
+      "assets/messages/sahej.mov"
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Delphine",
+    "category": "",
+    "message": "",
+    "unlockDate": "",
+    "media": [
+      "assets/messages/IMG_2701.mov"
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Raghav",
+    "category": "",
+    "message": "",
+    "unlockDate": "",
+    "media": [
+      "assets/messages/rag.png"
+    ]
+  },
+  {
+    "id": "msg-001",
+    "sender": "Aidan",
+    "category": "",
+    "message": "https://drive.google.com/drive/folders/1bsROfyI4YQbYQ-v2GNNBl0MSLcuPZh3r",
+    "unlockDate": "",
+    "media": [
+    ]
+  }
+]
